@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        .logo {
+            width: 200px;  /* Set the width of the logo */
+            height: auto;  /* Keep the aspect ratio */
+            margin: 0 auto;
+        }
+    </style>
+<p></p>
+    <title>ModSpot</title>
+</head>
+
+<div class="navbar">
+    <nav>
+        <ul>
+            <li><a href="ModSpot.html">Home</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+</div>
+
+<img src="https://i.ibb.co/ZL1gsc0/Mod-Spot-icon.png" alt="ModSpot-icon" class="logo"/>
+
+<link rel="stylesheet" href="style.css" />
+<body>
+   <!--font change-->
+   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
+    
+    <h1>Game Mod Files and Reddit Forum Cross-Reference Tool</h1>
+
+
+    <!-- Section for Folder Selection using Microsoft API -->
+    <section>
+        <h2><b>Selector</b></h2>
+        <center><button onclick="getFolder()">Select Mods Folder</button></center>
+        <pre id="folder-output"></pre>
+    </section>
+
+    
+
+    <!-- Section for Reddit Forum Text Extraction -->
+    <section>
+        <h2><b>Reddit Forum Text Extractor</b></h2>
+        <label for="reddit-url">Enter Reddit URL (Subreddit or Post):</label>
+        <input type="text" id="reddit-url" placeholder="https://www.reddit.com/r/subreddit or post URL">
+        <button onclick="getRedditInput()">Fetch Content</button>
+        <pre id="reddit-output"></pre>
+    </section>
+
+
+    <!-- Section for Cross-Referencing File Names and Reddit Input -->
+
+    <section>
+        <h2><b>Cross-Referencing Tool</b></h2>
+        <center><button id="cross-ref-button" onclick="crossReference()" style="display: none;">Get Relevant File Names</button></center>
+        <h3>Relevant File Names:</h3>
+        <pre id="relevant-output"></pre>
+    </section>
+
+
+    <script>
+        /* Folder Selection using Microsoft API */
+        let fileNames = [];
+        let commentsText = ""; // Stores only comments and replies
+        let selectedFolderName = ""; // Stores the name of the selected folder
+        let selectedRedditPage = ""; // Stores the name of the selected Reddit page
+
+
+        async function getFolder() {
+            try {
+                const directoryHandle = await window.showDirectoryPicker();
+                fileNames = []; // Reset fileNames array
+                selectedFolderName = directoryHandle.name; // Store folder name
+
+
+                await getFileName(directoryHandle);
+               
+                // Display the selected folder message
+                document.getElementById('folder-output').textContent = `You have selected a folder titled "${selectedFolderName}". If you wish to change this selection, just click the 'Select Folder' button again!`;
+
+
+                // Show the cross-reference button only if there are file names
+                if (fileNames.length > 0 && commentsText) {
+                    document.getElementById('cross-ref-button').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error accessing folder:', error);
+            }
+        }
+
+
+        async function getFileName(directoryHandle) {
+            for await (const entry of directoryHandle.values()) {
+                if (entry.kind === 'file') {
+                    fileNames.push(entry.name); // Add file name to the array
+                } else if (entry.kind === 'directory') {
+                    await getFileName(entry);
+                }
+            }
+        }
+
+
+        /* Reddit Forum Text Extraction */
+        async function getRedditInput() {
+            const urlInput = document.getElementById('reddit-url').value;
+            const outputElement = document.getElementById('reddit-output');
+            outputElement.textContent = ""; // Clear output area
+
+
+            // Updated regex to match both subreddit and post URLs
+            const redditRegex = /^https:\/\/(www\.)?reddit\.com\/(r\/[a-zA-Z0-9_]+(\/comments\/[a-zA-Z0-9_]+\/[a-zA-Z0-9_]+)?)\/?$/;
+            if (!redditRegex.test(urlInput)) {
+                outputElement.textContent = "Invalid Reddit URL. Please enter a valid subreddit or post URL.";
+                return;
+            }
+
+
+            try {
+                // Convert the Reddit URL to its .json endpoint
+                const apiUrl = urlInput.endsWith('/') ? `${urlInput}.json` : `${urlInput}/.json`;
+               
+                // Fetch data from the Reddit API
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error("Failed to fetch data from Reddit.");
+
+
+                const jsonData = await response.json();
+
+
+                // Check if it's a single post based on URL structure
+                if (urlInput.includes('/comments/')) {
+                    // Single post: get the title and top-level comments
+                    const postData = jsonData[0].data.children[0].data;
+                    const comments = jsonData[1].data.children
+                        .map(comment => comment.data.body)
+                        .filter(comment => comment) // Filter out deleted comments
+                        .join('\n\n---\n\n'); // Separate comments with dividers
+                    commentsText = comments; // Only store comments and replies
+                    selectedRedditPage = postData.title; // Store post title
+                } else {
+                    // Subreddit: get the titles of posts
+                    commentsText = jsonData.data.children
+                        .map(post => post.data.title)
+                        .join('\n');
+                    selectedRedditPage = urlInput.split('/r/')[1].split('/')[0]; // Store subreddit name
+                }
+
+
+                // Display the selected Reddit page message
+                outputElement.textContent = `We have received the Reddit page "${selectedRedditPage}". If you wish to change this selection, just click the 'Fetch Content' button again!`;
+
+
+                // Show the cross-reference button if there are file names and comments
+                if (fileNames.length > 0 && commentsText) {
+                    document.getElementById('cross-ref-button').style.display = 'block';
+                }
+            } catch (error) {
+                outputElement.textContent = `Error: ${error.message}`;
+                console.error(error);
+            }
+        }
+
+
+       /* Excluded common words */
+       const excludedWords = new Set([
+            "mod", "the", "to", "for", "and", "in", "of", "a", "an", "it",
+            "is", "that", "on", "with", "as", "sims", "at", "by", "this", "are", "be", "if",
+            "your", "body", "just", "any", "base", "ea", "core", "script", "tuning","about", "like", "that", "this",
+            "with", "only", "such", "from", "which", "where", "when", "there", "more",
+            "other", "before", "during", "after", "many", "few", "no", "so", "but", "mods", "cheats", "all", "better", "game",
+            ...Array.from("abcdefghijklmnopqrstuvwxyz") // Individual letters
+        ]);
+
+
+        /* Cross-Referencing Function */
+        function crossReference() {
+            const relevantOutput = document.getElementById('relevant-output');
+            relevantOutput.textContent = ""; // Clear previous output
+
+
+            // Split and filter comments text
+            const redditWords = commentsText.toLowerCase().split(/\s+/).filter(word => !excludedWords.has(word));
+            const relevantFileNames = [];
+            const wordMatches = {}; // Object to store matches
+
+
+            for (const fileName of fileNames) {
+                // Remove any text inside parentheses from the file name
+                const cleanedFileName = fileName.replace(/\([^)]*\)/g, "");
+               
+                // Extract words considering capital letters and splitting
+                const fileWords = [];
+
+
+                // Match capitalized words and groups of uppercase letters
+                const regex = /[A-Z][a-z]*/g; // Matches capitalized words
+                const capitalGroupRegex = /[A-Z]+/g; // Matches groups of uppercase letters
+                const wordsInFileName = cleanedFileName.split(/[_\-.]+/).flatMap(word => {
+                    // Get capitalized words
+                    const capitalWords = word.match(regex) || [];
+                    // Get groups of uppercase letters as a single word
+                    const upperCaseGroups = word.match(capitalGroupRegex) || [];
+                    return [...capitalWords, ...upperCaseGroups];
+                });
+
+
+                // Push all words to fileWords array, uncapitalized
+                for (const word of wordsInFileName) {
+                    const lowerWord = word.toLowerCase();
+                    if (!excludedWords.has(lowerWord)) {
+                        fileWords.push(lowerWord);
+                    }
+                }
+
+
+                // Check for matches
+                for (const fileWord of fileWords) {
+                    if (fileWord.length === 1) {
+                        // Check if it is a single letter and exists consecutively in Reddit text
+                        const regexForSingleLetters = new RegExp(`\\b${fileWord}{2,}\\b`, 'g'); // Match consecutive single letters
+                        if (redditWords.some(redditWord => regexForSingleLetters.test(redditWord))) {
+                            relevantFileNames.push(fileName);
+                            if (!wordMatches[fileWord]) {
+                                wordMatches[fileWord] = fileName;
+                            }
+                            break; // No need to check other words if a match is found
+                        }
+                    } else {
+                        if (redditWords.includes(fileWord)) {
+                            relevantFileNames.push(fileName);
+                            if (!wordMatches[fileWord]) {
+                                wordMatches[fileWord] = fileName;
+                            }
+                            break; // No need to check other words if a match is found
+                        }
+                    }
+                }
+            }
+
+
+            // Filter relevant file names to include only those containing "package" or "script"
+            const filteredFileNames = relevantFileNames.filter(filename =>
+                filename.toLowerCase().includes('package') || filename.toLowerCase().includes('script')
+            );
+
+
+            // Print the relevant words and their matches
+            const uniqueWords = Object.keys(wordMatches);
+            if (uniqueWords.length > 0) {
+                relevantOutput.textContent += `Unique relevant words found in Reddit (used to cross-reference): ${uniqueWords.join(', ')}\n`;
+            }
+
+
+            if (filteredFileNames.length > 0) {
+                relevantOutput.textContent += `Relevant file names: \n${filteredFileNames.join('\n')}`;
+            } else {
+                relevantOutput.textContent = "No relevant file names found.";
+            }
+        }
+    </script>
+</body>
+</html>
