@@ -1,39 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ModSpot</title>
+    <link rel="icon" href="favicon.png" type="image/png" />
+    <link rel="stylesheet" href="style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet" />
     <style>
         .logo {
             width: 200px;  /* Set the width of the logo */
             height: auto;  /* Keep the aspect ratio */
             margin: 0 auto;
+            display: block;
         }
     </style>
-<p></p>
-    <title>ModSpot</title>
-    <link rel="icon" href="favicon.png" type="image/png">
 </head>
-
-<div class="navbar">
-    <nav>
-        <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="about.html">About</a></li>
-        </ul>
-    </nav>
-</div>
-
-<img src="https://i.ibb.co/ZL1gsc0/Mod-Spot-icon.png" alt="ModSpot-icon" class="logo"/>
-
-<link rel="stylesheet" href="style.css" />
 <body>
-   <!--font change-->
-   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
-    
-    <h1>Game Mod Files and Reddit Forum Cross-Reference Tool</h1>
+    <div class="navbar">
+        <nav>
+            <ul>
+                <li><a href="#">Home</a></li>
+                <li><a href="about.html">About</a></li>
+            </ul>
+        </nav>
+    </div>
 
+    <img src="https://i.ibb.co/ZL1gsc0/Mod-Spot-icon.png" alt="ModSpot-icon" class="logo" />
+
+    <h1>Game Mod Files and Reddit Forum Cross-Reference Tool</h1>
 
     <!-- Section for Folder Selection using Microsoft API -->
     <section>
@@ -41,8 +36,6 @@
         <center><button onclick="getFolder()">Select Mods Folder</button></center>
         <pre id="folder-output"></pre>
     </section>
-
-    
 
     <!-- Section for Reddit Forum Text Extraction -->
     <section>
@@ -53,16 +46,13 @@
         <pre id="reddit-output"></pre>
     </section>
 
-
     <!-- Section for Cross-Referencing File Names and Reddit Input -->
-
     <section>
         <h2><b>Cross-Referencing Tool</b></h2>
         <center><button id="cross-ref-button" onclick="crossReference()" style="display: none;">Get Relevant File Names</button></center>
         <h3>Relevant File Names:</h3>
         <pre id="relevant-output"></pre>
     </section>
-
 
     <script>
         /* Folder Selection using Microsoft API */
@@ -71,19 +61,16 @@
         let selectedFolderName = ""; // Stores the name of the selected folder
         let selectedRedditPage = ""; // Stores the name of the selected Reddit page
 
-
         async function getFolder() {
             try {
                 const directoryHandle = await window.showDirectoryPicker();
                 fileNames = []; // Reset fileNames array
                 selectedFolderName = directoryHandle.name; // Store folder name
 
-
                 await getFileName(directoryHandle);
-               
+
                 // Display the selected folder message
                 document.getElementById('folder-output').textContent = `You have selected a folder titled "${selectedFolderName}". If you wish to change this selection, just click the 'Select Folder' button again!`;
-
 
                 // Show the cross-reference button only if there are file names
                 if (fileNames.length > 0 && commentsText) {
@@ -93,7 +80,6 @@
                 console.error('Error accessing folder:', error);
             }
         }
-
 
         async function getFileName(directoryHandle) {
             for await (const entry of directoryHandle.values()) {
@@ -105,13 +91,11 @@
             }
         }
 
-
         /* Reddit Forum Text Extraction */
         async function getRedditInput() {
             const urlInput = document.getElementById('reddit-url').value;
             const outputElement = document.getElementById('reddit-output');
             outputElement.textContent = ""; // Clear output area
-
 
             // Updated regex to match both subreddit and post URLs
             const redditRegex = /^https:\/\/(www\.)?reddit\.com\/(r\/[a-zA-Z0-9_]+(\/comments\/[a-zA-Z0-9_]+\/[a-zA-Z0-9_]+)?)\/?$/;
@@ -120,18 +104,15 @@
                 return;
             }
 
-
             try {
                 // Convert the Reddit URL to its .json endpoint
                 const apiUrl = urlInput.endsWith('/') ? `${urlInput}.json` : `${urlInput}/.json`;
-               
+
                 // Fetch data from the Reddit API
                 const response = await fetch(apiUrl);
                 if (!response.ok) throw new Error("Failed to fetch data from Reddit.");
 
-
                 const jsonData = await response.json();
-
 
                 // Check if it's a single post based on URL structure
                 if (urlInput.includes('/comments/')) {
@@ -151,10 +132,8 @@
                     selectedRedditPage = urlInput.split('/r/')[1].split('/')[0]; // Store subreddit name
                 }
 
-
                 // Display the selected Reddit page message
                 outputElement.textContent = `We have received the Reddit page "${selectedRedditPage}". If you wish to change this selection, just click the 'Fetch Content' button again!`;
-
 
                 // Show the cross-reference button if there are file names and comments
                 if (fileNames.length > 0 && commentsText) {
@@ -166,7 +145,6 @@
             }
         }
 
-
        /* Excluded common words */
        const excludedWords = new Set([
             "mod", "the", "to", "for", "and", "in", "of", "a", "an", "it",
@@ -177,26 +155,22 @@
             ...Array.from("abcdefghijklmnopqrstuvwxyz") // Individual letters
         ]);
 
-
         /* Cross-Referencing Function */
         function crossReference() {
             const relevantOutput = document.getElementById('relevant-output');
             relevantOutput.textContent = ""; // Clear previous output
-
 
             // Split and filter comments text
             const redditWords = commentsText.toLowerCase().split(/\s+/).filter(word => !excludedWords.has(word));
             const relevantFileNames = [];
             const wordMatches = {}; // Object to store matches
 
-
             for (const fileName of fileNames) {
                 // Remove any text inside parentheses from the file name
                 const cleanedFileName = fileName.replace(/\([^)]*\)/g, "");
-               
+
                 // Extract words considering capital letters and splitting
                 const fileWords = [];
-
 
                 // Match capitalized words and groups of uppercase letters
                 const regex = /[A-Z][a-z]*/g; // Matches capitalized words
@@ -209,7 +183,6 @@
                     return [...capitalWords, ...upperCaseGroups];
                 });
 
-
                 // Push all words to fileWords array, uncapitalized
                 for (const word of wordsInFileName) {
                     const lowerWord = word.toLowerCase();
@@ -217,7 +190,6 @@
                         fileWords.push(lowerWord);
                     }
                 }
-
 
                 // Check for matches
                 for (const fileWord of fileWords) {
@@ -243,19 +215,16 @@
                 }
             }
 
-
             // Filter relevant file names to include only those containing "package" or "script"
             const filteredFileNames = relevantFileNames.filter(filename =>
                 filename.toLowerCase().includes('package') || filename.toLowerCase().includes('script')
             );
-
 
             // Print the relevant words and their matches
             const uniqueWords = Object.keys(wordMatches);
             if (uniqueWords.length > 0) {
                 relevantOutput.textContent += `Unique relevant words found in Reddit (used to cross-reference): ${uniqueWords.join(', ')}\n`;
             }
-
 
             if (filteredFileNames.length > 0) {
                 relevantOutput.textContent += `Relevant file names: \n${filteredFileNames.join('\n')}`;
