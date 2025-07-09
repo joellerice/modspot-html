@@ -153,26 +153,20 @@ body {
 .glow-green {
   color: #6fdc99;
   text-shadow:
-    0 0 5px #6fdc99,
-    0 0 10px #6fdc99,
-    0 0 20px #6fdc99,
-    0 0 40px #6fdc99;
-  animation: glowPulseGreen 2s ease-in-out infinite;
+    0 0 3px #6fdc99,
+    0 0 6px #6fdc99;
+  animation: gentleGlow 3s ease-in-out infinite;
 }
 
-@keyframes glowPulseGreen {
+@keyframes gentleGlow {
   0%, 100% {
     text-shadow:
-      0 0 5px #6fdc99,
-      0 0 10px #6fdc99,
-      0 0 20px #6fdc99,
-      0 0 40px #6fdc99;
+      0 0 3px #6fdc99,
+      0 0 6px #6fdc99;
   }
   50% {
     text-shadow:
-      0 0 15px #6fdc99,
-      0 0 30px #6fdc99,
-      0 0 50px #6fdc99,
-      0 0 70px #6fdc99;
+      0 0 5px #6fdc99,
+      0 0 8px #6fdc99;
   }
 }
